@@ -11,9 +11,11 @@ namespace edward {
 
 Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     : output_(output)
-    , X_(pCenter.nodeNum)
     , n_(pCenter.nodeNum)
-    , tabuList_(pCenter.nodeNum)
+    , X_(n_)
+    , tabuList_(n_)
+    , qCenters_(n_)
+    , qElements_(n_)
     , k_(pCenter.centerNum) {
     param::n = pCenter.nodeNum;
     G_.resize(3);
@@ -167,6 +169,7 @@ void Instance::reduce() {
         }
         k_ = 0;
     }
+
 }
 
 void Instance::getInit() {
@@ -209,6 +212,7 @@ void Instance::getInit() {
     for (auto e : G_[0].getSet()) {
         target_ += elements_[e].getW();
     }
+    target_star_ = target_;
 
     //get N^3
     for (auto &&[idx, element] : elements_) {
@@ -226,14 +230,21 @@ void Instance::getInit() {
             }
         }
     }
+
+    for (auto &pr : elements_) {
+        qElements_.insert(pr);
+    }
+    for (auto &pr : centers_) {
+        qCenters_.insert(pr);
+    }
 }
 
 int Instance::getPDelta(int p) {
     int delta = 0;
     auto &G0 = G_[0];
-    for (auto e : centers_[p].getC().getSet()) {
+    for (auto e : qCenters_[p].getC().getSet()) {
         if (G0.exist(e)) {
-            delta -=  elements_[e].getW();
+            delta -=  qElements_[e].getW();
         }
     }
     return delta;
@@ -242,20 +253,37 @@ int Instance::getPDelta(int p) {
 int Instance::getQDelta(int q) {
     int delta = 0;
     auto G1 = G_[1];
-    for (auto e : centers_[q].getC().getSet()) {
+    for (auto e : qCenters_[q].getC().getSet()) {
         if (G1.exist(e)) {
-            delta += elements_[e].getW();
+            delta += qElements_[e].getW();
         }
     }
     return delta;
 }
 
+void Instance::insert() {
+    int p = move_.first;
+    X_.insert(p);
+    for (auto e : qCenters_[p].getC().getSet()) {
+        auto &element = qElements_[e];
+        if (element.getG() == 0) {
+            G_[0].erase(e);
+            G_[1].insert(e);
+        } else if (element.getG() == 1) {
+            G_[1].erase(e);
+            G_[2].insert(e);
+        }
+        element.incG();
+    }
+}
+
+
 int Instance::insert(int p) {
     //X | {p}
     X_.insert(p);
     int delta = 0;
-    for (auto e : centers_[p].getC().getSet()) {
-        auto &element = elements_[e];
+    for (auto e : qCenters_[p].getC().getSet()) {
+        auto &element = qElements_[e];
         if (element.getG() == 0) {
             delta -= element.getW();
             G_[0].erase(e);
@@ -269,12 +297,28 @@ int Instance::insert(int p) {
     return delta;
 }
 
+void Instance::remove() {
+    int q = move_.second;
+    X_.erase(q);
+    for (auto e : qCenters_[q].getC().getSet()) {
+        auto &element = qElements_[e];
+        if (element.getG() == 1) {
+            G_[1].erase(e);
+            G_[0].insert(e);
+        } else if (element.getG() == 2) {
+            G_[2].erase(e);
+            G_[1].insert(e);
+        }
+        element.decG();
+    }
+}
+
 int Instance::remove(int q) {
     //X \ {q}
     X_.erase(q);
     int delta = 0;
-    for (auto e : centers_[q].getC().getSet()) {
-        auto &element = elements_[e];
+    for (auto e : qCenters_[q].getC().getSet()) {
+        auto &element = qElements_[e];
         if (element.getG() == 1) {
             delta += element.getW();
             G_[1].erase(e);
@@ -301,81 +345,144 @@ void Instance::removeTabu(std::vector<int> &arr) {
     }
 }
 
-bool Instance::findMove() {
-    int t = G_[0].getRandom();
-    auto &elem_star = elements_[t];
-    auto P = elem_star.getB().getSet();
-    auto Q = X_ & elem_star.getN3();
-    removeTabu(P);
-    removeTabu(Q);
-    if (Q.empty()) {
-        auto Q_ = X_.getSet();
-        removeTabu(Q_);
-        int minPDelta = INF, minQDelta = INF, pDelta, qDelta;
-        bool pFlag = false, qFlag = false;
-        for (auto p : P) {
-//            if (inTabuList(p)) continue;
-            pDelta = getPDelta(p);
-            if (pDelta < minPDelta) {
-                minPDelta = pDelta;
-                move_.first = p;
-                pFlag = true;
-            }
+Instance::Iter Instance::partitionTabu(std::vector<int> &arr) {
+    auto head = arr.begin(), tail = arr.end();
+    while (head != tail) {
+        if (!inTabuList(*head)) ++head;
+        else {
+            //inTabuList
+            --tail;
+            std::swap(*head, *tail);
         }
-        for (auto q : Q_) {
-//            if (inTabuList(q)) continue;
+    }
+    if (head == arr.begin() && G_[0].size() == 1) head = arr.end();
+    return head;    //head == tail
+}
+
+bool Instance::breakTabu1(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
+    int delta = search1(pBegin, pEnd, qBegin, qEnd);
+    if (delta < INF && target_ + delta < target_star_) {
+        target_star_ = target_ + delta;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Instance::breakTabu2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
+    int delta = search2(pBegin, pEnd, qBegin, qEnd);
+    if (delta < INF && target_ + delta < target_star_) {
+        target_star_ = target_ + delta;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int Instance::search1(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
+    int minDelta = INF, delta, pDelta, qDelta, minQDelta, minQ;
+    int p, q;
+    for (auto pIter = pBegin; pIter != pEnd; ++pIter) {
+        p = *pIter;
+//            if (inTabuList(p)) continue;
+        //X | {p}
+        pDelta = insert(p);
+
+        minQDelta = INF;
+        minQ = -1;
+        for (auto qIter = qBegin; qIter != qEnd; ++qIter) {
+            q = *qIter;
+//                if (inTabuList(q)) continue;
             qDelta = getQDelta(q);
             if (qDelta < minQDelta) {
                 minQDelta = qDelta;
-                move_.second = q;
-                qFlag = true;
+                minQ = q;
             }
         }
-        return pFlag && qFlag;
-    } else {
-        int minDelta = INF, delta, pDelta, qDelta, minQDelta, minQ;
-        bool flag = false;
-        for (auto p : P) {
-//            if (inTabuList(p)) continue;
-            //X | {p}
-            pDelta = insert(p);
-
-            minQDelta = INF;
-            minQ = -1;
-            for (auto q : Q) {
-//                if (inTabuList(q)) continue;
-                qDelta = getQDelta(q);
-                if (qDelta < minQDelta) {
-                    minQDelta = qDelta;
-                    minQ = q;
-                    flag = true;
-                }
-            }
+        if (minQDelta < INF) {
             delta = pDelta + minQDelta;
             if (delta < minDelta) {
                 minDelta = delta;
                 move_ = {p, minQ};
             }
-
-            remove(p);
-
         }
-        return flag;
+
+        remove(p);
+
+    }
+    return minDelta;
+}
+
+int Instance::search2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
+    int minPDelta = INF, minQDelta = INF, pDelta, qDelta, p, q;
+    for (auto pIter = pBegin; pIter != pEnd; ++pIter) {
+        p = *pIter;
+//            if (inTabuList(p)) continue;
+        pDelta = getPDelta(p);
+        if (pDelta < minPDelta) {
+            minPDelta = pDelta;
+            move_.first = p;
+        }
+    }
+    for (auto qIter = qBegin; qIter != qEnd; ++qIter) {
+        q = *qIter;
+//            if (inTabuList(q)) continue;
+        qDelta = getQDelta(q);
+        if (qDelta < minQDelta) {
+            minQDelta = qDelta;
+            move_.second = q;
+        }
+    }
+    if (minPDelta < INF && minQDelta < INF) return minPDelta + minQDelta;
+    else return INF;
+}
+
+bool Instance::findMove() {
+    int t = G_[0].getRandom();
+    auto &elem_star = qElements_[t];
+    auto P = elem_star.getB().getSet();
+    auto Q = X_ & elem_star.getN3();
+    auto PTabu = partitionTabu(P);
+    auto QTabu = partitionTabu(Q);
+    if (breakTabu1(PTabu, P.end(), QTabu, Q.end())) return true;
+
+    int delta;
+    if (QTabu == Q.begin()) {
+        auto Q_ = X_.getSet();
+        auto Q_Tabu = partitionTabu(Q_);
+
+        if (breakTabu2(PTabu, P.end(), Q_Tabu, Q_.end())) return true;
+
+        delta = search2(P.begin(), PTabu, Q_.begin(), Q_Tabu);
+    } else {
+        delta = search1(P.begin(), PTabu, Q.begin(), QTabu);
+    }
+    if (delta < INF) {
+        target_ += delta;
+        if (target_ < target_star_) {
+            target_star_ = target_;
+        }
+        return true;
+    } else {
+        return false;
     }
 
 }
 
 void Instance::makeMove() {
     static int moveIter = 0;
-    static constexpr int LIMIT = 5e3;
+    static int LIMIT = 1e4;
     /*
      * 1e4: 2.4s
      */
     int oldU = U_;
-    target_ += insert(move_.first) + remove(move_.second);
+//    target_ += insert(move_.first) + remove(move_.second);
+    insert();
+    remove();
     U_ = G_[0].size();
     ++moveIter;
-    print("[test]", U_, "move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
+    //TODO:debug
+    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
 
     if (U_ < U_star_) {
         //X_star <- X
@@ -388,12 +495,13 @@ void Instance::makeMove() {
     }
     if (U_ >= oldU){
         for (auto e : G_[0].getSet()) {
-            elements_[e].incW();
+            qElements_[e].incW();
         }
     }
     if (moveIter > LIMIT) {
         tabuList_.expand();
         moveIter = 0;
+        LIMIT = INF;
     }
     tabuList_.add(move_);
 }

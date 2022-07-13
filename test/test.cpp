@@ -68,4 +68,12 @@ void test_Set_efficiency() {
     timer_RandomSet("RandomSet:");
 }
 
+void test_unpack() {
+    auto &&[begin1, end1] = std::make_pair(1, 1);
+}
+
+void test_Vector() {
+    print("test_Vector", int());
+}
+
 }

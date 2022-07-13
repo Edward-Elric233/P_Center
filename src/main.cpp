@@ -58,27 +58,28 @@ void test(istream& inputStream, ostream& outputStream, long long secTimeout) {
 int main(int argc, char* argv[]) {
     cerr << "load environment." << endl;
     long long secTimeout = atoll(argv[1]);
-    int randSeed = atoi(argv[2]);
+//    int randSeed = atoi(argv[2]);
+    int randSeed = 123456;
 
+    /*
     //std::string fileName = "sample";
 //    std::string fileName = "pmed19.n400p080";
-    std::string fileName = "rl1323p070";
+//    std::string fileName = "rl1323p070";
+//    std::string fileName = "rl1323p030";
+//    std::string fileName = "u1817p020";
+//    std::string fileName = "u1817p010";
+    std::string fileName = "u1817p130";
+//    std::string fileName = "pmed06.n200p005";
+//    std::string fileName = "pcb3038p010r729";
     ifstream ifs("..\\data\\input\\" + fileName + ".txt");
     ofstream ofs("..\\data\\output\\" + fileName + ".txt");
     //test(ifs, ofs, secTimeout); // for self-test.
     edward::Timer timer;
     test(ifs, ofs, secTimeout, randSeed);
     timer("[test] run time:");
+     */
 
-//    test(cin, cout, secTimeout, randSeed);
-    //edward::test_Set();
+//    test(cin, cout, secTimeout, randSeed)
+    edward::test_Vector();
     return 0;
 }
-
-/*
-59
-58
-2
-12
-4
-*/

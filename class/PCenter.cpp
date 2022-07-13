@@ -23,28 +23,39 @@ namespace szx {
             edward::Random::initRand(seed);
 
             coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+            int iter = 0;
+            edward::Timer timer;
             for (auto r = input.nodesWithDrops.begin(); !isTimeout() && (r != input.nodesWithDrops.end()); ++r) {
+                timer.reset();
                 reduceRadius(input, *r);
                 coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+                //TODO
+                edward::print("radius iter:", iter++);
+                timer("radius time:");
             }
         }
 
         void coverAllNodesUnderFixedRadius(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             edward::Instance instance(input, output);
             //edward::print("test instance:", instance);
+            edward::Timer timer;
             instance.reduce();
-            //edward::print("test instance after reduce:", instance);
+            timer("reduce time:");
+//            edward::print("test instance after reduce:", instance);
+
+            timer.reset();
             instance.getInit();
+            timer("init time:");
             int iter = 0;
             while (!isTimeout() && !instance.isSolved()) {
-                if (iter == 15262) {
-                    int x = 1;
-                }
                 bool flag;
+                timer.reset();
                 while (!isTimeout() &&
                         !(flag = instance.findMove()));   //until find a legal move
                 if (flag) instance.makeMove();
+                //TODO:debug
                 edward::print("[test] iterate count:", ++iter);
+                timer("move time:");
             }
         }
 

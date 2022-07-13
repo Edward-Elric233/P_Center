@@ -50,7 +50,11 @@ public:
     int size() const {
         return nums_.size();
     }
+
+    friend std::ostream& operator<< (std::ostream&os, const TabuList& tabuList);
 };
+
+std::ostream& operator<< (std::ostream&os, const TabuList& tabuList);
 
 }
 

@@ -14,6 +14,10 @@ void test_RandomSet();
 
 void test_Set_efficiency();
 
+void test_unpack();
+
+void test_Vector();
+
 }
 
 #endif //P_CENTER_TEST_H

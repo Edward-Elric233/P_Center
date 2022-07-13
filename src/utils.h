@@ -28,6 +28,12 @@ void print(T&& first, Args&&... args) {
     print(std::forward<Args>(args)...);
 }
 
+template<typename Iter>
+void printArr(Iter begin, Iter end) {
+//    while (begin != end) std::cout << *begin++ << " ";
+    while (begin != end) ofs << *begin++ << " ";
+}
+
 class Random {
 public:
     // random number generator.
@@ -48,6 +54,9 @@ public:
     void operator() (const std::string& msg) {
         auto duration = std::chrono::system_clock::now() - timePoint_;
         print(msg, static_cast<double>(duration.count()) / decltype(duration)::period::den, "s");
+    }
+    void reset() {
+        timePoint_ = std::chrono::system_clock::now();
     }
 };
 

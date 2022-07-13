@@ -7,5 +7,10 @@
 namespace edward {
 
 
+std::ostream& operator<< (std::ostream&os, const TabuList& tabuList) {
+    for (auto x : tabuList.nums_) os << x << " ";
+    return os;
+}
+
 
 }
