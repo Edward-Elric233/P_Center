@@ -3,11 +3,17 @@
 // Version: 1.0
 // Date: 2022/6/28
 // Description:
-#include <climits>
-#include "Instance.h"
 #include "utils.h"
+#include "Vector.h"
+#include "Instance.h"
+#include <climits>
 
 namespace edward {
+
+int Instance::i;
+int Instance::len;
+int Instance::e;
+int* Instance::p;
 
 Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     : output_(output)
@@ -17,9 +23,8 @@ Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     , qCenters_(n_)
     , qElements_(n_)
     , k_(pCenter.centerNum) {
-    param::n = pCenter.nodeNum;
     G_.resize(3);
-    for (int i = 0; i < pCenter.nodeNum; ++i) {
+    for (i = 0; i < pCenter.nodeNum; ++i) {
         auto &coverages = pCenter.coverages[i];
         centers_.emplace(i, coverages);
         for (auto j : coverages) {
@@ -41,15 +46,32 @@ std::ostream& operator<< (std::ostream& os, const Instance& instance) {
 }
 
 void Instance::removeRef(int idx, const Element &element) {
+    auto &vec = element.getB().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        centers_[p[i]].removeCover(idx);
+    }
+    /*
     for (auto x : element.getB().getSet()) {
         centers_[x].removeCover(idx);
     }
+     */
 }
 
 void Instance::removeRef(int idx, const Center &center) {
+    auto &vec = center.getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        elements_[p[i]].removeCovered(idx);
+    }
+
+    /*
     for (auto x : center.getC().getSet()) {
         elements_[x].removeCovered(idx);
     }
+     */
 }
 
 bool Instance::reduceRD() {
@@ -101,17 +123,27 @@ bool Instance::reduceUC() {
     for (auto iter = elements_.begin(); iter != elements_.end(); ) {
         if (iter->second.isSingleCovered()) {
             //we must pick set s in order to cover e
-            int idx = output_[--k_] = *(iter->second.getB().getSet().begin());
+            int idx = output_[--k_] = iter->second.getB().getSet().front();
 
             auto center_iter = centers_.find(idx);
 
             //eliminate set s and all elements covered by set s
 
             std::vector<int> elems;
+
+            auto &vec = center_iter->second.getC().getSet();
+            p = vec.p_;
+            len = vec.idx_;
+            for (i = 0; i < len; ++i) {
+                elems.push_back(p[i]);
+            }
+
+            /*
             for (auto x : center_iter->second.getC().getSet()) {
                 elems.push_back(x);
                 //CANNOT delet elements while traversing it, we use a auxiliary array 'elemts' to store elements idx.
             }
+             */
             for (auto x : elems) {
                 //eliminate all elements covered by set s
                 auto elem_iter = elements_.find(x);
@@ -164,7 +196,7 @@ void Instance::reduce() {
         }
         for (int i = centers_.size(); i < k_; ++i) {
             //random select center
-            output_[i] = *T.getSet().begin();
+            output_[i] = T.getSet().front();
             T.erase(output_[i]);
         }
         k_ = 0;
@@ -178,9 +210,19 @@ void Instance::getInit() {
     std::vector<std::pair<double, int>> alpha;
     for (auto &&[idx, center] : centers_) {
         double sum = 0;
+
+        auto &vec = center.getC().getSet();
+        p = vec.p_;
+        len = vec.idx_;
+        for (i = 0; i < len; ++i) {
+            sum += ALPHAE / elements_[p[i]].getB().size();
+        }
+
+        /*
         for (auto e : center.getC().getSet()) {
             sum += ALPHAE / elements_[e].getB().size();
         }
+         */
         alpha.emplace_back(sum, idx);
     }
     std::sort(alpha.begin(), alpha.end(), std::greater<std::pair<double,int>>());
@@ -194,11 +236,32 @@ void Instance::getInit() {
     }
 
     std::unordered_map<int, int> cnt;   //record solution X cover elements's times
+
+    auto &vec = X_.getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+
+        auto &vec1 = centers_[p[i]].getC().getSet();
+        auto p1 = vec1.p_;
+        int len1 = vec1.idx_;
+        for (int j = 0; j < len1; ++j) {
+            ++cnt[p1[j]];
+        }
+        /*
+        for (auto e : centers_[p[i]].getC().getSet()) {
+            ++cnt[e];
+        }
+         */
+    }
+
+    /*
     for (auto s : X_.getSet()) {
         for (auto e : centers_[s].getC().getSet()) {
             ++cnt[e];
         }
     }
+     */
 
     for (auto &&[idx, element] : elements_) {
         int t = cnt[idx];
@@ -209,29 +272,72 @@ void Instance::getInit() {
     U_ = G_[0].size();
     U_star_ = U_;   //X_star
     target_ = 0;
+
+    {
+        auto &vec = G_[0].getSet();
+        p = vec.p_;
+        len = vec.idx_;
+        for (i = 0; i < len; ++i) {
+            target_ += elements_[p[i]].getW();
+        }
+    }
+
+    /*
     for (auto e : G_[0].getSet()) {
         target_ += elements_[e].getW();
     }
+     */
     target_star_ = target_;
 
     //get N^3
     for (auto &&[idx, element] : elements_) {
         Set E;  //N^2
+        auto &vec = element.getB().getSet();
+        p = vec.p_;
+        len = vec.idx_;
+        for (i = 0; i < len; ++i) {
+
+            auto &vec1 = centers_[p[i]].getC().getSet();
+            auto p1 = vec1.p_;
+            int len1 = vec1.idx_;
+            for (int j = 0; j < len1; ++j) {
+                if (p1[j] != idx) E.insert(p1[j]);
+            }
+            /*
+            for (auto e : centers_[p[i]].getC().getSet()) {
+                ++cnt[e];
+            }
+             */
+        }
+        /*
         for(auto s : element.getB().getSet()) { //N^1
             for (auto e : centers_[s].getC().getSet()) {
                 if (e != idx) E.insert(e);
             }
         }
+         */
         for (auto e : E.getSet()) {
+            auto &vec = elements_[e].getB().getSet();
+            p = vec.p_;
+            len = vec.idx_;
+            for (i = 0; i < len; ++i) {
+                if (!element.getB().exist(p[i])) { //s not in N^1
+                    element.insertN3(p[i]);
+                }
+            }
+            /*
             for (auto s : elements_[e].getB().getSet()) {
                 if (!element.getB().exist(s)) { //s not in N^1
                     element.insertN3(s);
                 }
             }
+             */
         }
     }
 
+//    print("-------------------------");
     for (auto &pr : elements_) {
+//        printType(pr);
         qElements_.insert(pr);
     }
     for (auto &pr : centers_) {
@@ -239,31 +345,69 @@ void Instance::getInit() {
     }
 }
 
-int Instance::getPDelta(int p) {
+int Instance::getPDelta(int pp) {
     int delta = 0;
     auto &G0 = G_[0];
+    auto &vec = qCenters_[pp].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        if (G0.exist(p[i])) {
+            delta -=  qElements_[p[i]].getW();
+        }
+    }
+    /*
     for (auto e : qCenters_[p].getC().getSet()) {
         if (G0.exist(e)) {
             delta -=  qElements_[e].getW();
         }
     }
+     */
     return delta;
 }
 
 int Instance::getQDelta(int q) {
     int delta = 0;
-    auto G1 = G_[1];
+    auto &G1 = G_[1];
+    auto &vec = qCenters_[q].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        if (G1.exist(p[i])) {
+            delta += qElements_[p[i]].getW();
+        }
+    }
+    /*
     for (auto e : qCenters_[q].getC().getSet()) {
         if (G1.exist(e)) {
             delta += qElements_[e].getW();
         }
     }
+     */
     return delta;
 }
 
 void Instance::insert() {
-    int p = move_.first;
-    X_.insert(p);
+    int pp = move_.first;
+    X_.insert(pp);
+
+    auto &vec = qCenters_[pp].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
+        auto &element = qElements_[e];
+        if (element.getG() == 0) {
+            G_[0].erase(e);
+            G_[1].insert(e);
+        } else if (element.getG() == 1) {
+            G_[1].erase(e);
+            G_[2].insert(e);
+        }
+        element.incG();
+    }
+
+    /*
     for (auto e : qCenters_[p].getC().getSet()) {
         auto &element = qElements_[e];
         if (element.getG() == 0) {
@@ -275,14 +419,20 @@ void Instance::insert() {
         }
         element.incG();
     }
+     */
 }
 
 
-int Instance::insert(int p) {
+int Instance::insert(int pp) {
     //X | {p}
-    X_.insert(p);
+    X_.insert(pp);
     int delta = 0;
-    for (auto e : qCenters_[p].getC().getSet()) {
+
+    auto &vec = qCenters_[pp].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
         auto &element = qElements_[e];
         if (element.getG() == 0) {
             delta -= element.getW();
@@ -294,12 +444,44 @@ int Instance::insert(int p) {
         }
         element.incG();
     }
+
+    /*
+    for (auto e : qCenters_[pp].getC().getSet()) {
+        auto &element = qElements_[e];
+        if (element.getG() == 0) {
+            delta -= element.getW();
+            G_[0].erase(e);
+            G_[1].insert(e);
+        } else if (element.getG() == 1) {
+            G_[1].erase(e);
+            G_[2].insert(e);
+        }
+        element.incG();
+    }
+     */
     return delta;
 }
 
 void Instance::remove() {
     int q = move_.second;
     X_.erase(q);
+
+    auto &vec = qCenters_[q].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
+        auto &element = qElements_[e];
+        if (element.getG() == 1) {
+            G_[1].erase(e);
+            G_[0].insert(e);
+        } else if (element.getG() == 2) {
+            G_[2].erase(e);
+            G_[1].insert(e);
+        }
+        element.decG();
+    }
+    /*
     for (auto e : qCenters_[q].getC().getSet()) {
         auto &element = qElements_[e];
         if (element.getG() == 1) {
@@ -311,12 +493,32 @@ void Instance::remove() {
         }
         element.decG();
     }
+     */
 }
 
 int Instance::remove(int q) {
     //X \ {q}
     X_.erase(q);
     int delta = 0;
+
+    auto &vec = qCenters_[q].getC().getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
+        auto &element = qElements_[e];
+        if (element.getG() == 1) {
+            delta += element.getW();
+            G_[1].erase(e);
+            G_[0].insert(e);
+        } else if (element.getG() == 2) {
+            G_[2].erase(e);
+            G_[1].insert(e);
+        }
+        element.decG();
+    }
+
+    /*
     for (auto e : qCenters_[q].getC().getSet()) {
         auto &element = qElements_[e];
         if (element.getG() == 1) {
@@ -329,6 +531,7 @@ int Instance::remove(int q) {
         }
         element.decG();
     }
+     */
     return delta;
 }
 
@@ -440,7 +643,7 @@ int Instance::search2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
 bool Instance::findMove() {
     int t = G_[0].getRandom();
     auto &elem_star = qElements_[t];
-    auto P = elem_star.getB().getSet();
+    auto P = elem_star.getB().getSet().getVec();
     auto Q = X_ & elem_star.getN3();
     auto PTabu = partitionTabu(P);
     auto QTabu = partitionTabu(Q);
@@ -448,7 +651,7 @@ bool Instance::findMove() {
 
     int delta;
     if (QTabu == Q.begin()) {
-        auto Q_ = X_.getSet();
+        auto Q_ = X_.getSet().getVec();
         auto Q_Tabu = partitionTabu(Q_);
 
         if (breakTabu2(PTabu, P.end(), Q_Tabu, Q_.end())) return true;
@@ -482,21 +685,40 @@ void Instance::makeMove() {
     U_ = G_[0].size();
     ++moveIter;
     //TODO:debug
-    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
+//    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
 
     if (U_ < U_star_) {
         //X_star <- X
+
         int idx = 0;
+        auto &vec = X_.getSet();
+        auto p = vec.p_;
+        int len = vec.idx_;
+        for (i = 0; i < len; ++i) {
+            output_[idx++] = p[i];
+        }
+
+        /*
         for (auto s : X_.getSet()) {
             output_[idx++] = s;
         }
+         */
         U_star_ = U_;
         moveIter = 0;
     }
     if (U_ >= oldU){
+        auto &vec = G_[0].getSet();
+        auto p = vec.p_;
+        int len = vec.idx_;
+        for (i = 0; i < len; ++i) {
+            qElements_[p[i]].incW();
+        }
+
+        /*
         for (auto e : G_[0].getSet()) {
             qElements_[e].incW();
         }
+         */
     }
     if (moveIter > LIMIT) {
         tabuList_.expand();

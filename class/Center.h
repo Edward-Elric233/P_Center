@@ -20,6 +20,10 @@ public:
     explicit Center(const std::vector<int>& arr) {
         for (auto x : arr) C_.insert(x);
     }
+    Center(Center&& center) noexcept
+    : C_(std::move(center.C_)) {
+
+    }
 
     void removeCover(int x) {
         C_.erase(x);

@@ -12,7 +12,7 @@ namespace edward {
 
     template<typename T>    //int -> T
     class RandomMap {
-        using Pair = std::pair<int, T>;
+        using Pair = std::pair<int const, T>;
         using Arr = std::vector<T>;
         Arr arr_;
         std::vector<int> pos_;
@@ -32,10 +32,13 @@ namespace edward {
         bool exist(int x) const {
             return pos_[x] != -1;
         }
-        void insert(const Pair& pr) {
+
+        void insert(Pair &pr) {
             //if (exist(x)) return;
+//            printType(pr);
             pos_[pr.first] = arr_.size();
-            arr_.push_back(pr.second);
+            //TODO: important!!!, avoid memory leak
+            arr_.push_back(std::move(pr.second));
         }
         /*
         void erase(int x) {

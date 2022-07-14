@@ -6,22 +6,29 @@
 #ifndef P_CENTER_RANDOMSET_H
 #define P_CENTER_RANDOMSET_H
 
-#include <vector>
 #include "utils.h"
+#include "Vector.h"
 
 namespace edward {
 
 class RandomSet {
-    std::vector<int> pos_, nums_;
+    using Vector = Vector<int>;
+    Vector pos_, nums_;
 public:
     explicit RandomSet(int n)
-    : pos_(n, -1) {
-        nums_.reserve(n);
+    : pos_(n, -1)
+    , nums_(n) {
     }
     RandomSet()
-    : pos_(param::n, -1) {
-        nums_.reserve(param::n);
+    : pos_(param::n, -1)
+    , nums_(param::n) {
     }
+    RandomSet(RandomSet&& randomSet) noexcept
+    : pos_(std::move(randomSet.pos_))
+    , nums_(std::move(randomSet.nums_)) {
+
+    }
+
 
     void insert(int x) {
         if (exist(x)) return;
@@ -30,8 +37,9 @@ public:
     }
     void erase(int x) {
         if (!exist(x)) return;
-        nums_[pos_[x]] = nums_.back();
-        pos_[nums_.back()] = pos_[x];
+        int t = nums_.back();
+        nums_[pos_[x]] = t;
+        pos_[t] = pos_[x];
         pos_[x] = -1;
         nums_.pop_back();
     }
@@ -44,7 +52,7 @@ public:
     bool exist(int x) const {
         return pos_[x] != -1;
     }
-    const std::vector<int>& getSet() const {
+    const Vector& getSet() const {
         return nums_;
     }
     int getRandom() const {

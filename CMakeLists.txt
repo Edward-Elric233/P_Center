@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
 include_directories(class)
 include_directories(src)
 include_directories(test)
+include_directories(D:/C++/boost_1_49_0)
 set(CMAKE_CXX_STANDARD 17)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 

@@ -24,23 +24,27 @@ namespace szx {
 
             coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
             int iter = 0;
-            edward::Timer timer;
+            //TODO
+//            edward::Timer timer;
             for (auto r = input.nodesWithDrops.begin(); !isTimeout() && (r != input.nodesWithDrops.end()); ++r) {
-                timer.reset();
+                //TODO
+//                timer.reset();
                 reduceRadius(input, *r);
                 coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
                 //TODO
-                edward::print("radius iter:", iter++);
-                timer("radius time:");
+//                edward::print("radius iter:", iter++);
+//                timer("radius time:");
             }
         }
 
         void coverAllNodesUnderFixedRadius(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
+            edward::param::n = input.nodeNum;
             edward::Instance instance(input, output);
             //edward::print("test instance:", instance);
             edward::Timer timer;
             instance.reduce();
             timer("reduce time:");
+
 //            edward::print("test instance after reduce:", instance);
 
             timer.reset();
@@ -49,14 +53,15 @@ namespace szx {
             int iter = 0;
             while (!isTimeout() && !instance.isSolved()) {
                 bool flag;
-                timer.reset();
+//                timer.reset();
                 while (!isTimeout() &&
                         !(flag = instance.findMove()));   //until find a legal move
                 if (flag) instance.makeMove();
                 //TODO:debug
-                edward::print("[test] iterate count:", ++iter);
-                timer("move time:");
+//                edward::print("[test] iterate count:", ++iter);
+//                timer("move time:");
             }
+            edward::print("[test] over");
         }
 
         void reduceRadius(PCenter& input, Nodes nodesWithDrop) {

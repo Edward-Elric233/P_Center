@@ -13,6 +13,7 @@
 #include "TabuList.h"
 #include "RandomMap.h"
 
+#include <memory>
 #include <vector>
 #include <functional>
 #include <unordered_map>
@@ -35,6 +36,8 @@ class Instance {
     int target_, target_star_;            //\forall e\in G0, \sum W_e
     std::pair<int, int> move_;
     TabuList tabuList_;
+    static int i, len, e;
+    static int* p;
 
 
     bool reduceRD();

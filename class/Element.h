@@ -15,8 +15,20 @@ class Element {
     RandomSet N3_;//N^3
     int G_ = 0, W_ = 1;
 public:
-    Element() = default;
-    ~Element() = default;
+    Element() {
+//        print("Element ctor");
+    }
+    ~Element() {
+//        print("Element dtor");
+    }
+
+    Element(Element&& element) noexcept
+    : B_(std::move(element.B_))
+    , N3_(std::move(element.N3_))
+    , G_(element.G_)
+    , W_(element.W_) {
+
+    }
 
     int getG() const {
         return G_;

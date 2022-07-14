@@ -1,2 +1,4 @@
-test_Vector 0 
-
+[test] debug run time: 20.3872 s
+[test] release run time: 5.42989 s
+[test] release run with delete time: 1.5479 s
+[test] release run without delete time: 1.3360 s

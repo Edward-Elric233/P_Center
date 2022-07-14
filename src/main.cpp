@@ -61,7 +61,6 @@ int main(int argc, char* argv[]) {
 //    int randSeed = atoi(argv[2]);
     int randSeed = 123456;
 
-    /*
     //std::string fileName = "sample";
 //    std::string fileName = "pmed19.n400p080";
 //    std::string fileName = "rl1323p070";
@@ -76,10 +75,9 @@ int main(int argc, char* argv[]) {
     //test(ifs, ofs, secTimeout); // for self-test.
     edward::Timer timer;
     test(ifs, ofs, secTimeout, randSeed);
-    timer("[test] run time:");
-     */
+    timer("[test] release run time:");
 
 //    test(cin, cout, secTimeout, randSeed)
-    edward::test_Vector();
+//    edward::test_Vector();
     return 0;
 }

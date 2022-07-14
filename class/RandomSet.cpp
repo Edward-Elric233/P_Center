@@ -8,16 +8,32 @@
 namespace edward {
 
 std::ostream& operator<< (std::ostream& os, const RandomSet& randomSet) {
+    auto &vec = randomSet.nums_;
+    auto p = vec.p_;
+    int len = vec.idx_;
+    for (int i = 0; i < len; ++i) {
+        os << p[i] << " ";
+    }
+    /*
     for (auto x : randomSet.nums_) {
         os << x << " ";
     }
+     */
     return os;
 }
 
 bool RandomSet::operator<=(const RandomSet &randomSet) const {
+    auto &vec = nums_;
+    auto p = vec.p_;
+    int len = vec.idx_;
+    for (int i = 0; i < len; ++i) {
+        if (!randomSet.exist(p[i])) return false;
+    }
+    /*
     for (auto x : nums_) {
         if (!randomSet.exist(x)) return false;
     }
+     */
     return true;
 }
 
@@ -27,11 +43,23 @@ std::vector<int> operator &(const RandomSet& lhs, const RandomSet &rhs) {
     } else {
         //lhs.size() <= rhs.size()
         std::vector<int> ans;
+
+        auto &vec = lhs.getSet();
+        auto p = vec.p_;
+        int len = vec.idx_;
+        for (int i = 0; i < len; ++i) {
+            if (rhs.exist(p[i])) {
+                ans.push_back(p[i]);
+            }
+        }
+
+        /*
         for (auto x : lhs.getSet()) {
             if (rhs.exist(x)) {
                 ans.push_back(x);
             }
         }
+         */
         return ans;
     }
 }
