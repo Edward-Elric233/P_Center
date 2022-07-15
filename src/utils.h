@@ -15,24 +15,24 @@ namespace edward {
 
 constexpr int INF = 0x3f3f3f3f;
 
-//extern std::ofstream ofs;
+extern std::ofstream ofs;
 
 inline void print() {
 //    std::cout << "\n";
-    std::cout << std::endl;
-//    ofs << "\n";
+//    std::cout << std::endl;
+    ofs << "\n";
 }
 template<typename T, typename... Args>
 void print(T&& first, Args&&... args) {
-    std::cout << first << " ";
-//    ofs << first << " ";
+//    std::cout << first << " ";
+    ofs << first << " ";
     print(std::forward<Args>(args)...);
 }
 
 template<typename Iter>
 void printArr(Iter begin, Iter end) {
-    while (begin != end) std::cout << *begin++ << " ";
-//    while (begin != end) ofs << *begin++ << " ";
+//    while (begin != end) std::cout << *begin++ << " ";
+    while (begin != end) ofs << *begin++ << " ";
 }
 
 template<typename T>

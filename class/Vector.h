@@ -35,10 +35,11 @@ namespace edward {
 //            print("move ctor");
             vector.p_ = nullptr;
         }
-        void operator= (const Vector& vector) {
+        void operator= (Vector&& vector) noexcept {
 //            print("copy assignment");
             p_ = vector.p_;
             idx_ = vector.idx_;
+            vector.p_ = nullptr;
         }
         ~Vector() {
 //            print("Vector dtor");

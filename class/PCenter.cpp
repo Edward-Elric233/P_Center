@@ -22,26 +22,30 @@ namespace szx {
         void solve(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             edward::Random::initRand(seed);
 
-            coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+            edward::Timer timer;
             int iter = 0;
+            coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+            edward::print("radius iter:", iter++);
+            timer("radius time:");
             //TODO
-//            edward::Timer timer;
             for (auto r = input.nodesWithDrops.begin(); !isTimeout() && (r != input.nodesWithDrops.end()); ++r) {
                 //TODO
-//                timer.reset();
+                timer.reset();
                 reduceRadius(input, *r);
                 coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
                 //TODO
-//                edward::print("radius iter:", iter++);
-//                timer("radius time:");
+                edward::print("radius iter:", iter++);
+                timer("radius time:");
             }
         }
 
         void coverAllNodesUnderFixedRadius(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             edward::param::n = input.nodeNum;
-            edward::Instance instance(input, output);
-            //edward::print("test instance:", instance);
             edward::Timer timer;
+            edward::Instance instance(input, output);
+            timer("input time");
+            //edward::print("test instance:", instance);
+            timer.reset();
             instance.reduce();
             timer("reduce time:");
 
@@ -61,7 +65,7 @@ namespace szx {
 //                edward::print("[test] iterate count:", ++iter);
 //                timer("move time:");
             }
-            edward::print("[test] over");
+//            edward::print("[test] over");
         }
 
         void reduceRadius(PCenter& input, Nodes nodesWithDrop) {

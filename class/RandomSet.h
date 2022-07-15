@@ -23,11 +23,8 @@ public:
     : pos_(param::n, -1)
     , nums_(param::n) {
     }
-    RandomSet(RandomSet&& randomSet) noexcept
-    : pos_(std::move(randomSet.pos_))
-    , nums_(std::move(randomSet.nums_)) {
-
-    }
+    RandomSet(RandomSet&& randomSet) noexcept = default;
+    RandomSet& operator= (RandomSet&& randomSet) noexcept = default;
 
 
     void insert(int x) {

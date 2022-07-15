@@ -22,13 +22,8 @@ public:
 //        print("Element dtor");
     }
 
-    Element(Element&& element) noexcept
-    : B_(std::move(element.B_))
-    , N3_(std::move(element.N3_))
-    , G_(element.G_)
-    , W_(element.W_) {
-
-    }
+    Element(Element&& element) noexcept = default;
+    Element& operator= (Element&& element) noexcept = default;
 
     int getG() const {
         return G_;

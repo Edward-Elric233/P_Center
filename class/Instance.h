@@ -11,7 +11,7 @@
 #include "PCenter.h"
 #include "RandomSet.h"
 #include "TabuList.h"
-#include "RandomMap.h"
+#include "QuickMap.h"
 
 #include <memory>
 #include <vector>
@@ -25,8 +25,8 @@ class Instance {
     int n_, k_;
     std::unordered_map<int, Center> centers_;
     std::unordered_map<int, Element> elements_;
-    RandomMap<Center> qCenters_;
-    RandomMap<Element> qElements_;
+    QuickMap<Center> qCenters_;
+    QuickMap<Element> qElements_;
     szx::Centers &output_;  //reference
     //const std::function<bool()> &isTimeout_;
 
