@@ -17,15 +17,15 @@ int* Instance::p;
 
 Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     : output_(output)
-    , n_(pCenter.nodeNum)
-    , X_(n_)
-    , tabuList_(n_)
-    , qCenters_(n_)
-    , qElements_(n_)
+    , centers_(pCenter.nodeNum)
+    , elements_(pCenter.nodeNum)
     , k_(pCenter.centerNum) {
+    print(param::n);
+    print(elements_[0].getB().getSet().p_[0]);
     G_.resize(3);
-    for (i = 0; i < pCenter.nodeNum; ++i) {
+    for (i = 0; i < param::n; ++i) {
         auto &coverages = pCenter.coverages[i];
+        //TODO: understand the rvalue
         centers_.emplace(i, coverages);
         for (auto j : coverages) {
             //i cover j
@@ -36,10 +36,10 @@ Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
 
 std::ostream& operator<< (std::ostream& os, const Instance& instance) {
     print("k = ", instance.k_);
-    for (auto &&[idx, center] : instance.centers_) {
+    for (auto &&[idx, center] : instance.centers_.getSet()) {
         print("center", idx, ":", center);
     }
-    for (auto &&[idx, element] : instance.elements_) {
+    for (auto &&[idx, element] : instance.elements_.getSet()) {
         print("element", idx, ":", element);
     }
     return os;
@@ -75,6 +75,27 @@ void Instance::removeRef(int idx, const Center &center) {
 }
 
 bool Instance::reduceRD() {
+    record_.reset();
+
+    for (auto&& [idx1, element1]: elements_.getSet()) {
+        for (auto&& [idx2, element2]: elements_.getSet()) {
+            if (idx1 == idx2) continue;
+            if (element1.isDominate(element2)) record_.insert(idx2);
+        }
+    }
+
+    auto &arr = record_.getSet();
+    p = arr.p_;
+    len = arr.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
+        removeRef(e, elements_[e]);
+        elements_.erase(e);
+    }
+
+    return !record_.empty();
+
+    /*
     bool flag = false;
     for (auto iter1 = elements_.begin(); iter1 != elements_.end(); ++iter1) {
         for (auto iter2 = elements_.begin(); iter2 != elements_.end(); ) {
@@ -94,9 +115,32 @@ bool Instance::reduceRD() {
     }
     //print("test reduceRD:", *this);
     return flag;
+     */
 }
 
 bool Instance::reduceCD() {
+    record_.reset();
+
+    for (auto&& [idx1, center1]: centers_.getSet()) {
+        for (auto&& [idx2, center2]: centers_.getSet()) {
+            if (idx1 == idx2) continue;
+            if (center1.isDominate(center2));
+            record_.insert(idx2);
+        }
+    }
+
+    auto &arr = record_.getSet();
+    p = arr.p_;
+    len = arr.idx_;
+    for (i = 0; i < len ; ++i) {
+        e = p[i];
+        removeRef(e, centers_[e]);
+        centers_.erase(e);
+    }
+
+    return !record_.empty();
+
+    /*
     bool flag = false;
     for (auto iter1 = centers_.begin(); iter1 != centers_.end(); ++iter1) {
         for (auto iter2 = centers_.begin(); iter2 != centers_.end(); ) {
@@ -116,9 +160,36 @@ bool Instance::reduceCD() {
     }
     //print("test reduceCD:", *this);
     return flag;
+     */
 }
 
 bool Instance::reduceUC() {
+    record_.reset();    //recored elements to remove
+    for (auto&& [idx, element]: elements_.getSet()) {
+        if (element.isSingleCovered()) {
+            int center_idx = output_[--k_] = element.getB().getSet().front();
+            auto &center = centers_[center_idx];
+
+            auto &vec = center.getC().getSet();
+            p = vec.p_;
+            len = vec.idx_;
+            for (i = 0; i < len; ++i) {
+                record_.insert(p[i]);
+            }
+        }
+    }
+
+    auto &vec = record_.getSet();
+    p = vec.p_;
+    len = vec.idx_;
+    for (i = 0; i < len; ++i) {
+        e = p[i];
+        removeRef(e, elements_[e]);
+        centers_.erase(e);
+    }
+    return !record_.empty();
+
+    /*
     bool flag = false;
     for (auto iter = elements_.begin(); iter != elements_.end(); ) {
         if (iter->second.isSingleCovered()) {
@@ -138,12 +209,10 @@ bool Instance::reduceUC() {
                 elems.push_back(p[i]);
             }
 
-            /*
-            for (auto x : center_iter->second.getC().getSet()) {
-                elems.push_back(x);
+//            for (auto x : center_iter->second.getC().getSet()) {
+//                elems.push_back(x);
                 //CANNOT delet elements while traversing it, we use a auxiliary array 'elemts' to store elements idx.
-            }
-             */
+//            }
             for (auto x : elems) {
                 //eliminate all elements covered by set s
                 auto elem_iter = elements_.find(x);
@@ -163,11 +232,12 @@ bool Instance::reduceUC() {
     }
     //print("test reduceUC:", *this);
     return flag;
+    */
 }
 
 bool Instance::isComplete() const {
     //检查每个元素都有被覆盖
-    for (auto &&[idx, element] : elements_) {
+    for (auto &&[idx, element] : elements_.getSet()) {
         if (!element.isCovered()) return false;
     }
     return true;
@@ -182,22 +252,22 @@ void Instance::reduce() {
         flag |= reduceUC();
     } while (flag);
     if (centers_.size() < k_) {
-        RandomSet T;
-        for (int i = 0; i < n_; ++i) T.insert(i);
+        record_.set();
+
         int t = 0;
-        for (auto &&[idx, center] : centers_) {
-            T.erase(idx); //remove the rest of centers
+        for (auto &&[idx, center] : centers_.getSet()) {
+            record_.erase(idx); //remove the rest of centers
             output_[t++] = idx;
         }
         //t = centers.size()
 
         for (auto iter = output_.begin() + k_; iter != output_.end(); ++iter) {
-            T.erase(*iter); //remove confirmed centers
+            record_.erase(*iter); //remove confirmed centers
         }
         for (int i = centers_.size(); i < k_; ++i) {
             //random select center
-            output_[i] = T.getSet().front();
-            T.erase(output_[i]);
+            output_[i] = record_.getSet().back();
+            record_.erase(output_[i]);
         }
         k_ = 0;
     }
@@ -208,7 +278,7 @@ void Instance::getInit() {
     //calculate alpha for every set
     constexpr double ALPHAE = 100.0;
     std::vector<std::pair<double, int>> alpha;
-    for (auto &&[idx, center] : centers_) {
+    for (auto &&[idx, center] : centers_.getSet()) {
         double sum = 0;
 
         auto &vec = center.getC().getSet();
@@ -235,6 +305,7 @@ void Instance::getInit() {
         output_[i] = t;
     }
 
+    //TODO: replace cnt
     std::unordered_map<int, int> cnt;   //record solution X cover elements's times
 
     auto &vec = X_.getSet();
@@ -263,7 +334,7 @@ void Instance::getInit() {
     }
      */
 
-    for (auto &&[idx, element] : elements_) {
+    for (auto &&[idx, element] : elements_.getSet()) {
         int t = cnt[idx];
         element.setG(t);
         G_[t > 1 ? 2 : t].insert(idx);
@@ -290,8 +361,9 @@ void Instance::getInit() {
     target_star_ = target_;
 
     //get N^3
-    for (auto &&[idx, element] : elements_) {
-        Set E;  //N^2
+    for (auto &&[idx, element] : elements_.getSet()) {
+//        Set E;  //N^2
+        record_.reset();
         auto &vec = element.getB().getSet();
         p = vec.p_;
         len = vec.idx_;
@@ -301,7 +373,7 @@ void Instance::getInit() {
             auto p1 = vec1.p_;
             int len1 = vec1.idx_;
             for (int j = 0; j < len1; ++j) {
-                if (p1[j] != idx) E.insert(p1[j]);
+                if (p1[j] != idx) record_.insert(p1[j]);
             }
             /*
             for (auto e : centers_[p[i]].getC().getSet()) {
@@ -316,7 +388,11 @@ void Instance::getInit() {
             }
         }
          */
-        for (auto e : E.getSet()) {
+        auto &arr = record_.getSet();
+        p = arr.p_;
+        len = arr.idx_;
+        for (i = 0; i < len; ++i) {
+            e = p[i];
             auto &vec = elements_[e].getB().getSet();
             p = vec.p_;
             len = vec.idx_;
@@ -336,12 +412,12 @@ void Instance::getInit() {
     }
 
 //    print("-------------------------");
-    for (auto &pr : elements_) {
+    for (auto &[idx, element] : elements_.getSet()) {
 //        printType(pr);
-        qElements_.insert(pr);
+        qElements_.insert(idx, std::move(element));
     }
-    for (auto &pr : centers_) {
-        qCenters_.insert(pr);
+    for (auto &[idx, center] : centers_.getSet()) {
+        qCenters_.insert(idx, std::move(center));
     }
 }
 

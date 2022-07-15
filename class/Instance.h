@@ -12,6 +12,8 @@
 #include "RandomSet.h"
 #include "TabuList.h"
 #include "QuickMap.h"
+#include "RandomMap.h"
+#include "Vector.h"
 
 #include <memory>
 #include <vector>
@@ -22,13 +24,14 @@ namespace edward {
 
 class Instance {
     using Iter = std::vector<int>::iterator;
-    int n_, k_;
-    std::unordered_map<int, Center> centers_;
-    std::unordered_map<int, Element> elements_;
+    int k_;
+    RandomMap<Center> centers_;
+    RandomMap<Element> elements_;
     QuickMap<Center> qCenters_;
     QuickMap<Element> qElements_;
     szx::Centers &output_;  //reference
     //const std::function<bool()> &isTimeout_;
+    RandomSet record_;
 
     RandomSet X_;
     std::vector<RandomSet> G_;    //G0 G1 G2

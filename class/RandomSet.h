@@ -15,17 +15,33 @@ class RandomSet {
     using Vector = Vector<int>;
     Vector pos_, nums_;
 public:
-    explicit RandomSet(int n)
-    : pos_(n, -1)
-    , nums_(n) {
-    }
     RandomSet()
     : pos_(param::n, -1)
     , nums_(param::n) {
+
+    }
+    explicit RandomSet(int n)
+    : pos_(n, -1)
+    , nums_(n) {
+
     }
     RandomSet(RandomSet&& randomSet) noexcept = default;
     RandomSet& operator= (RandomSet&& randomSet) noexcept = default;
 
+    void reset() {
+        //like bitset.reset()
+        nums_.clear();
+        for (int i = 0; i < param::n; ++i) {
+            pos_[i] = -1;
+        }
+    }
+    void set() {
+        //like bitset.set()
+        for (int i = 0; i < param::n; ++i) {
+            nums_.push_back(i);
+            pos_[i] = i;
+        }
+    }
 
     void insert(int x) {
         if (exist(x)) return;
@@ -55,6 +71,7 @@ public:
     int getRandom() const {
         return nums_[Random::rand(nums_.size())];
     }
+
     bool operator<= (const RandomSet& randomSet) const;
     friend std::vector<int> operator &(const RandomSet& lhs, const RandomSet &rhs);
     friend std::ostream& operator<< (std::ostream& os, const RandomSet& randomSet);

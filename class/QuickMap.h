@@ -19,13 +19,10 @@ namespace edward {
         QuickMap()
         : arr_(param::n) {
         }
-        explicit QuickMap(int n)
-        : arr_(n) {
-        }
 
-        void insert(Pair &pr) {
+        void insert(int idx, T&& item) {
             //TODO: important!!!, avoid memory leak
-            arr_[pr.first] = std::move(pr.second);
+            arr_[idx] = std::move(item);
         }
         int size() const {
             return arr_.size();

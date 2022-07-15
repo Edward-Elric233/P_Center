@@ -17,6 +17,7 @@ namespace edward {
 class TabuList {
     int capacity_;  //default = 2
     int idx_;
+    //TODO: use Vector
     std::vector<int> vis_, nums_;
 
     void insert(int x) {
@@ -31,8 +32,8 @@ class TabuList {
         }
     }
 public:
-    TabuList(int n)
-    : vis_(n, 0)
+    TabuList()
+    : vis_(param::n, 0)
     , idx_(0)
     , capacity_(2) {
 

@@ -21,6 +21,7 @@ namespace szx {
     public:
         void solve(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             edward::Random::initRand(seed);
+            edward::param::n = input.nodeNum;
 
             edward::Timer timer;
             int iter = 0;
@@ -40,7 +41,6 @@ namespace szx {
         }
 
         void coverAllNodesUnderFixedRadius(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
-            edward::param::n = input.nodeNum;
             edward::Timer timer;
             edward::Instance instance(input, output);
             timer("input time");

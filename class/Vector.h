@@ -42,8 +42,9 @@ namespace edward {
             vector.p_ = nullptr;
         }
         ~Vector() {
-//            print("Vector dtor");
-//            delete[] p_;
+            print("Vector dtor");
+            //TODO 考虑不释放内存
+            delete[] p_;
         }
         T& operator[] (int n) {
             return p_[n];
@@ -76,6 +77,9 @@ namespace edward {
         }
         const T& front() const {
             return p_[0];
+        }
+        void clear() {
+            idx_ = 0;
         }
     };
 
