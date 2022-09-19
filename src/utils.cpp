@@ -9,7 +9,11 @@ namespace edward {
 
 std::mt19937 Random::pseudoRandNumGen;
 
-std::ofstream ofs("..\\test\\debug.txt");
+#ifdef __WIN32__
+    std::ofstream ofs("..\\test\\debug.txt");
+#elif __linux__
+    std::ofstream ofs("../test/debug.txt");
+#endif
 
 namespace param {
     int n;

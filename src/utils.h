@@ -19,7 +19,8 @@ extern std::ofstream ofs;
 
 inline void print() {
 //    std::cout << "\n";
-    ofs << "\n";
+//    ofs << "\n";
+    ofs << std::endl;
 }
 template<typename T, typename... Args>
 void print(T&& first, Args&&... args) {

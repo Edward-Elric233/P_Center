@@ -12,7 +12,7 @@ namespace edward {
 
     template<typename T>    //int -> T
     class RandomMap {
-        using Pair = std::pair<int, T>;
+        using Pair = std::pair<int const, T>;   //important, avoid copy of insert's arguments
         using Arr = std::vector<T>;
         Arr arr_;
         std::vector<int> pos_;
