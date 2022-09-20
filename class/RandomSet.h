@@ -35,6 +35,20 @@ public:
         pos_[x] = -1;
         nums_.pop_back();
     }
+    void fill() {
+        //置位操作
+        nums_.clear();
+        for (int i = 0; i < pos_.size(); ++i) {
+            insert(i);
+        }
+    }
+    void reset() {
+        //置0操作
+        nums_.clear();
+        for (int i = 0; i < pos_.size(); ++i) {
+            pos_[i] = -1;
+        }
+    }
     int size() const {
         return nums_.size(); //size_t -> int
     }

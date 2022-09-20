@@ -22,6 +22,11 @@ public:
         return G_;
     }
 
+    void reset() {
+        G_ = 0; W_ = 1;
+        N3_.reset();
+    }
+
     void setG(int g) {
         G_ = g;
     }
@@ -71,6 +76,7 @@ public:
         return B_;
     }
     void removeCovered(int x) {
+        //TODO: recalculate N3
         B_.erase(x);
     }
     bool isSingleCovered() const {

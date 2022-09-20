@@ -21,26 +21,28 @@ namespace szx {
     public:
         void solve(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             edward::Random::initRand(seed);
+            edward::param::n = input.nodeNum;
+            edward::Instance instance(input, output);
 
-            coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+            coverAllNodesUnderFixedRadius(instance, output, input, isTimeout, seed);
             int iter = 0;
             edward::Timer timer;
             for (auto r = input.nodesWithDrops.begin(); !isTimeout() && (r != input.nodesWithDrops.end()); ++r) {
                 timer.reset();
-                reduceRadius(input, *r);
-                coverAllNodesUnderFixedRadius(output, input, isTimeout, seed);
+                reduceRadius(instance, input, *r);
+                instance.reset();
+                coverAllNodesUnderFixedRadius(instance, output, input, isTimeout, seed);
                 //TODO
                 edward::print("radius iter:", iter++);
                 timer("radius time:");
             }
         }
 
-        void coverAllNodesUnderFixedRadius(Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
-            edward::Instance instance(input, output);
+        void coverAllNodesUnderFixedRadius(edward::Instance &instance, Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             //edward::print("test instance:", instance);
             edward::Timer timer;
-            instance.reduce();
-            timer("reduce time:");
+//            instance.reduce();
+//            timer("reduce time:");
 //            edward::print("test instance after reduce:", instance);
 
             timer.reset();
@@ -59,9 +61,14 @@ namespace szx {
             }
         }
 
-        void reduceRadius(PCenter& input, Nodes nodesWithDrop) {
+        void reduceRadius(edward::Instance &instance, PCenter& input, Nodes &nodesWithDrop) {
+            int centerIdx, elementIdx;
             for (auto n = nodesWithDrop.begin(); n != nodesWithDrop.end(); ++n) {
-                input.coverages[*n].pop_back();
+                auto &coverage = input.coverages[*n];
+                centerIdx = *n;
+                elementIdx = coverage.back();
+                coverage.pop_back();
+                instance.reduceRadius(centerIdx, elementIdx);
             }
         }
     };

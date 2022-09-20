@@ -50,6 +50,12 @@ public:
     int size() const {
         return nums_.size();
     }
+    void reset() {
+        capacity_ = 2;
+        idx_ = 0;
+        nums_.clear();
+        for (int i = 0; i < vis_.size(); ++i) vis_[i] = 0;
+    }
 
     friend std::ostream& operator<< (std::ostream&os, const TabuList& tabuList);
 };

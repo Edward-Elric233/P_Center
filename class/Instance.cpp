@@ -14,32 +14,45 @@ Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     , n_(pCenter.nodeNum)
     , X_(n_)
     , tabuList_(n_)
-    , qCenters_(n_)
-    , qElements_(n_)
+    , metaCenters_(n_)
+    , metaElements_(n_)
+    , centers_(metaCenters_)
+    , elements_(metaElements_)
     , k_(pCenter.centerNum) {
-    param::n = pCenter.nodeNum;
     G_.resize(3);
     for (int i = 0; i < pCenter.nodeNum; ++i) {
         auto &coverages = pCenter.coverages[i];
-        centers_.emplace(i, coverages);
+        metaCenters_[i].init(coverages);
         for (auto j : coverages) {
             //i cover j
-            elements_[j].covered(i);
+            metaElements_[j].covered(i);
         }
     }
 }
 
-std::ostream& operator<< (std::ostream& os, const Instance& instance) {
-    print("k = ", instance.k_);
-    for (auto &&[idx, center] : instance.centers_) {
-        print("center", idx, ":", center);
+void Instance::reset() {
+    X_.reset();
+    for (auto &Gi_ : G_) Gi_.reset();
+    tabuList_.reset();
+    centers_.reset();
+    elements_.reset();
+    for (auto &element : metaElements_) {
+        element.reset();
     }
-    for (auto &&[idx, element] : instance.elements_) {
-        print("element", idx, ":", element);
-    }
-    return os;
+    //metaCenters 不需要reset，没有什么操作
 }
 
+void Instance::reduceRadius(int centerIdx, int elementIdx) {
+    //change meta data
+    metaCenters_[centerIdx].removeCover(elementIdx);
+    metaElements_[elementIdx].removeCovered(centerIdx);
+}
+
+std::ostream& operator<< (std::ostream& os, const Instance& instance) {
+    std::cerr << "this function had been discarded!!!" << std::endl;
+}
+
+/*
 void Instance::removeRef(int idx, const Element &element) {
     for (auto x : element.getB().getSet()) {
         centers_[x].removeCover(idx);
@@ -171,6 +184,7 @@ void Instance::reduce() {
     }
 
 }
+ */
 
 void Instance::getInit() {
     //calculate alpha for every set
@@ -276,7 +290,6 @@ void Instance::insert() {
         element.incG();
     }
 }
-
 
 int Instance::insert(int p) {
     //X | {p}

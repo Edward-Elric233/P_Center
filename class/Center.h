@@ -17,11 +17,17 @@ class Center {
 public:
     Center() = default;
     ~Center() = default;
-    explicit Center(const std::vector<int>& arr) {
+
+    void reset() {
+
+    }
+
+    void init(const std::vector<int>& arr) {
         for (auto x : arr) C_.insert(x);
     }
 
     void removeCover(int x) {
+        //TODO: recalculate alpha
         C_.erase(x);
     }
 
