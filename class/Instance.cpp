@@ -23,6 +23,8 @@ Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     for (int i = 0; i < pCenter.nodeNum; ++i) {
         auto &coverages = pCenter.coverages[i];
         metaCenters_[i].init(coverages);
+        metaCenters_[i].setIdx(i);
+        metaElements_[i].setIdx(i);
         for (auto j : coverages) {
             //i cover j
             metaElements_[j].covered(i);
@@ -190,7 +192,8 @@ void Instance::getInit() {
     //calculate alpha for every set
     constexpr double ALPHAE = 100.0;
     std::vector<std::pair<double, int>> alpha;
-    for (auto &&[idx, center] : centers_) {
+    for (auto &&center : centers_) {
+        int idx = center.getIdx();
         double sum = 0;
         for (auto e : center.getC().getSet()) {
             sum += ALPHAE / elements_[e].getB().size();
@@ -214,7 +217,8 @@ void Instance::getInit() {
         }
     }
 
-    for (auto &&[idx, element] : elements_) {
+    for (auto &&element : elements_) {
+        int idx = element.getIdx();
         int t = cnt[idx];
         element.setG(t);
         G_[t > 1 ? 2 : t].insert(idx);
@@ -229,7 +233,8 @@ void Instance::getInit() {
     target_star_ = target_;
 
     //get N^3
-    for (auto &&[idx, element] : elements_) {
+    for (auto &&element : elements_) {
+        int idx = element.getIdx();
         Set E;  //N^2
         for(auto s : element.getB().getSet()) { //N^1
             for (auto e : centers_[s].getC().getSet()) {
@@ -245,20 +250,14 @@ void Instance::getInit() {
         }
     }
 
-    for (auto &pr : elements_) {
-        qElements_.insert(pr);
-    }
-    for (auto &pr : centers_) {
-        qCenters_.insert(pr);
-    }
 }
 
 int Instance::getPDelta(int p) {
     int delta = 0;
     auto &G0 = G_[0];
-    for (auto e : qCenters_[p].getC().getSet()) {
+    for (auto e : centers_[p].getC().getSet()) {
         if (G0.exist(e)) {
-            delta -=  qElements_[e].getW();
+            delta -=  elements_[e].getW();
         }
     }
     return delta;
@@ -267,9 +266,9 @@ int Instance::getPDelta(int p) {
 int Instance::getQDelta(int q) {
     int delta = 0;
     auto G1 = G_[1];
-    for (auto e : qCenters_[q].getC().getSet()) {
+    for (auto e : centers_[q].getC().getSet()) {
         if (G1.exist(e)) {
-            delta += qElements_[e].getW();
+            delta += elements_[e].getW();
         }
     }
     return delta;
@@ -278,8 +277,8 @@ int Instance::getQDelta(int q) {
 void Instance::insert() {
     int p = move_.first;
     X_.insert(p);
-    for (auto e : qCenters_[p].getC().getSet()) {
-        auto &element = qElements_[e];
+    for (auto e : centers_[p].getC().getSet()) {
+        auto &element = elements_[e];
         if (element.getG() == 0) {
             G_[0].erase(e);
             G_[1].insert(e);
@@ -295,8 +294,8 @@ int Instance::insert(int p) {
     //X | {p}
     X_.insert(p);
     int delta = 0;
-    for (auto e : qCenters_[p].getC().getSet()) {
-        auto &element = qElements_[e];
+    for (auto e : centers_[p].getC().getSet()) {
+        auto &element = elements_[e];
         if (element.getG() == 0) {
             delta -= element.getW();
             G_[0].erase(e);
@@ -313,8 +312,8 @@ int Instance::insert(int p) {
 void Instance::remove() {
     int q = move_.second;
     X_.erase(q);
-    for (auto e : qCenters_[q].getC().getSet()) {
-        auto &element = qElements_[e];
+    for (auto e : centers_[q].getC().getSet()) {
+        auto &element = elements_[e];
         if (element.getG() == 1) {
             G_[1].erase(e);
             G_[0].insert(e);
@@ -330,8 +329,8 @@ int Instance::remove(int q) {
     //X \ {q}
     X_.erase(q);
     int delta = 0;
-    for (auto e : qCenters_[q].getC().getSet()) {
-        auto &element = qElements_[e];
+    for (auto e : centers_[q].getC().getSet()) {
+        auto &element = elements_[e];
         if (element.getG() == 1) {
             delta += element.getW();
             G_[1].erase(e);
@@ -452,7 +451,7 @@ int Instance::search2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
 
 bool Instance::findMove() {
     int t = G_[0].getRandom();
-    auto &elem_star = qElements_[t];
+    auto &elem_star = elements_[t];
     auto P = elem_star.getB().getSet();
     auto Q = X_ & elem_star.getN3();
     auto PTabu = partitionTabu(P);
@@ -508,7 +507,7 @@ void Instance::makeMove() {
     }
     if (U_ >= oldU){
         for (auto e : G_[0].getSet()) {
-            qElements_[e].incW();
+            elements_[e].incW();
         }
     }
     if (moveIter > LIMIT) {

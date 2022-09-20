@@ -14,9 +14,20 @@ class Element {
     RandomSet B_; //the set of centers covering this element
     RandomSet N3_;//N^3
     int G_ = 0, W_ = 1;
+    int idx_;
 public:
     Element() = default;
     ~Element() = default;
+    Element(const Element&) = delete;
+    Element& operator=(const Element&) = delete;
+
+    int getIdx() const {
+        return idx_;
+    }
+
+    void setIdx(int idx) {
+        idx_ = idx;
+    }
 
     int getG() const {
         return G_;

@@ -15,10 +15,45 @@ class RefMap {
     using MetaData = std::vector<T>;
     MetaData &metaDatas_;
     edward::RandomSet set_;
+    class iterator {
+        MetaData &metaDatas_;
+        std::vector<int>::const_iterator citer_;
+    public:
+        iterator(MetaData &metaDatas, const std::vector<int>::const_iterator &citer)
+        : metaDatas_(metaDatas)
+        , citer_(citer) {}
+        ~iterator() {}
+        T& operator*() {
+            return metaDatas_[*citer_];
+        }
+        iterator& operator++() {
+            //前置++
+            ++citer_;
+            return *this;
+        }
+        iterator operator++(int) {
+            //后置++
+            auto ret = *this;
+            ++citer_;
+            return ret;
+        }
+        bool operator==(const iterator& rhs) {
+            return citer_ == rhs.citer_;
+        }
+        bool operator!=(const iterator& rhs) {
+            return citer_ != rhs.citer_;
+        }
+    };
 public:
     RefMap(MetaData &arr): metaDatas_(arr) {
         //初始化时所有元素都在集合中
         set_.fill();
+    }
+    iterator begin() {
+        return iterator(metaDatas_, set_.getSet().cbegin());
+    }
+    iterator end() {
+        return iterator(metaDatas_, set_.getSet().cend());
     }
     bool empty() const {
         return set_.empty();

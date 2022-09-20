@@ -18,6 +18,8 @@ void test_unpack();
 
 void test_Vector();
 
+void test_pair_ref();
+
 }
 
 #endif //P_CENTER_TEST_H

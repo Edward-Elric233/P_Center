@@ -17,10 +17,13 @@ constexpr int INF = 0x3f3f3f3f;
 
 extern std::ofstream ofs;
 
+inline void printEndl() {
+    ofs << std::endl;
+}
 inline void print() {
 //    std::cout << "\n";
-//    ofs << "\n";
-    ofs << std::endl;
+    ofs << "\n";
+//    ofs << std::endl;
 }
 template<typename T, typename... Args>
 void print(T&& first, Args&&... args) {

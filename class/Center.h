@@ -13,13 +13,24 @@
 namespace edward {
 
 class Center {
+    int idx_;
     RandomSet C_; // the set of elements covered by this center
 public:
     Center() = default;
     ~Center() = default;
+    Center(const Center&) = delete;
+    Center& operator=(const Center&) = delete;
 
     void reset() {
 
+    }
+
+    int getIdx() const {
+        return idx_;
+    }
+
+    void setIdx(int idx) {
+        idx_ = idx;
     }
 
     void init(const std::vector<int>& arr) {

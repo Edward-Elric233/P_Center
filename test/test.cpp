@@ -77,3 +77,10 @@ void test_Vector() {
 }
 
 }
+
+#include <bits/stdc++.h>
+using namespace std;
+void test() {
+    unordered_map<int, string>::iterator iter;
+    auto pr = *iter;
+}
