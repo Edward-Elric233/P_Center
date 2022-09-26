@@ -52,6 +52,7 @@ void Instance::reduceRadius(int centerIdx, int elementIdx) {
 
 std::ostream& operator<< (std::ostream& os, const Instance& instance) {
     std::cerr << "this function had been discarded!!!" << std::endl;
+    return os;
 }
 
 /*
@@ -190,13 +191,13 @@ void Instance::reduce() {
 
 void Instance::getInit() {
     //calculate alpha for every set
-    constexpr double ALPHAE = 100.0;
+    constexpr double ALPHA = 100.0;
     std::vector<std::pair<double, int>> alpha;
     for (auto &&center : centers_) {
         int idx = center.getIdx();
         double sum = 0;
         for (auto e : center.getC().getSet()) {
-            sum += ALPHAE / elements_[e].getB().size();
+            sum += ALPHA / elements_[e].getB().size();
         }
         alpha.emplace_back(sum, idx);
     }

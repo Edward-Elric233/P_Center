@@ -37,9 +37,10 @@ public:
     }
     void fill() {
         //置位操作
-        nums_.clear();
+        nums_.resize(pos_.size());
         for (int i = 0; i < pos_.size(); ++i) {
-            insert(i);
+            pos_[i] = i;
+            nums_[i] = i;
         }
     }
     void reset() {

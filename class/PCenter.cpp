@@ -48,7 +48,6 @@ namespace szx {
             timer.reset();
             instance.getInit();
             timer("init time:");
-            edward::printEndl();
             int iter = 0;
             while (!isTimeout() && !instance.isSolved()) {
                 bool flag;
