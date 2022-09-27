@@ -494,8 +494,8 @@ void Instance::makeMove() {
     remove();
     U_ = G_[0].size();
     ++moveIter;
-    //TODO:debug
-    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
+//    TODO:debug
+//    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
 
     if (U_ < U_star_) {
         //X_star <- X
