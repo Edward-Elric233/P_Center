@@ -236,7 +236,7 @@ void Instance::getInit() {
     //get N^3
     for (auto &&element : elements_) {
         int idx = element.getIdx();
-        Set E;  //N^2
+        RandomSet E;  //N^2
         for(auto s : element.getB().getSet()) { //N^1
             for (auto e : centers_[s].getC().getSet()) {
                 if (e != idx) E.insert(e);

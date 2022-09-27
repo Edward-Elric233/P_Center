@@ -26,15 +26,15 @@ namespace szx {
 
             coverAllNodesUnderFixedRadius(instance, output, input, isTimeout, seed);
             int iter = 0;
-//            edward::Timer timer;
+            edward::Timer timer;
             for (auto r = input.nodesWithDrops.begin(); !isTimeout() && (r != input.nodesWithDrops.end()); ++r) {
-//                timer.reset();
+                timer.reset();
                 reduceRadius(instance, input, *r);
                 instance.reset();
                 coverAllNodesUnderFixedRadius(instance, output, input, isTimeout, seed);
                 //TODO:debug
-//                edward::print("radius iter:", iter++);
-//                timer("radius time:");
+                edward::print("radius iter:", iter++);
+                timer("radius time:");
             }
         }
 

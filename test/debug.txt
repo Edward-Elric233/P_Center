@@ -1,1 +1,1 @@
-[test] run time: 5.92974 s 
+[test] run time: 1.54526 s 
