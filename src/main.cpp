@@ -71,9 +71,9 @@ int main(int argc, char* argv[]) {
 //    std::string fileName = "rl1323p030";
 //    std::string fileName = "u1817p020";
 //    std::string fileName = "u1817p010";
-//    std::string fileName = "u1817p130";
+    std::string fileName = "u1817p130";
 //    std::string fileName = "pmed06.n200p005";
-    std::string fileName = "pcb3038p010r729";
+//    std::string fileName = "pcb3038p010r729";
 #ifdef __WIN32__
     ifstream ifs("..\\data\\input\\" + fileName + ".txt");
     ofstream ofs("..\\data\\output\\" + fileName + ".txt");

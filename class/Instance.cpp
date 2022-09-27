@@ -14,6 +14,7 @@ Instance::Instance(const szx::PCenter &pCenter, szx::Centers &output)
     , n_(pCenter.nodeNum)
     , X_(n_)
     , tabuList_(n_)
+    , alpha_(n_)
     , metaCenters_(n_)
     , metaElements_(n_)
     , centers_(metaCenters_)
@@ -192,20 +193,20 @@ void Instance::reduce() {
 void Instance::getInit() {
     //calculate alpha for every set
     constexpr double ALPHA = 100.0;
-    std::vector<std::pair<double, int>> alpha;
     for (auto &&center : centers_) {
         int idx = center.getIdx();
         double sum = 0;
         for (auto e : center.getC().getSet()) {
             sum += ALPHA / elements_[e].getB().size();
         }
-        alpha.emplace_back(sum, idx);
+        //getInit is called after reset, so idx is increasement
+        alpha_[idx] = {sum, idx};
     }
-    std::sort(alpha.begin(), alpha.end(), std::greater<std::pair<double,int>>());
+    std::sort(alpha_.begin(), alpha_.end(), std::greater<std::pair<double,int>>());
 
     int t;
     for (int i = 0; i < k_; ++i) {
-        t = alpha[i].second;
+        t = alpha_[i].second;
         X_.insert(t);
         //X_star <- X
         output_[i] = t;
@@ -233,6 +234,7 @@ void Instance::getInit() {
     }
     target_star_ = target_;
 
+    /*
     //get N^3
     for (auto &&element : elements_) {
         int idx = element.getIdx();
@@ -250,9 +252,15 @@ void Instance::getInit() {
             }
         }
     }
+     */
 
 }
 
+/*!
+ * calc delta after add p in X
+ * @param p
+ * @return
+ */
 int Instance::getPDelta(int p) {
     int delta = 0;
     auto &G0 = G_[0];
@@ -358,6 +366,11 @@ void Instance::removeTabu(std::vector<int> &arr) {
     }
 }
 
+/*!
+ * 将arr原地划分为两部分：不在禁忌表和在禁忌表，复杂度为O(n)
+ * @param arr
+ * @return 分界点
+ */
 Instance::Iter Instance::partitionTabu(std::vector<int> &arr) {
     auto head = arr.begin(), tail = arr.end();
     while (head != tail) {
@@ -368,7 +381,13 @@ Instance::Iter Instance::partitionTabu(std::vector<int> &arr) {
             std::swap(*head, *tail);
         }
     }
-    if (head == arr.begin() && G_[0].size() == 1) head = arr.end();
+    /*
+    if (head == arr.begin() && G_[0].size() == 1) {
+        //如果整个数组都在禁忌表中(覆盖某个元素的中心只有一个，刚刚被移出解，导致这个元素无法被覆盖)，而且只有一个未覆盖元素(随机无法跳出停滞)
+        //有了破禁规则，不需要
+        head = arr.end();
+    }
+     */
     return head;    //head == tail
 }
 
@@ -392,6 +411,14 @@ bool Instance::breakTabu2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
     }
 }
 
+/*!
+ * search P * Q
+ * @param pBegin
+ * @param pEnd
+ * @param qBegin
+ * @param qEnd
+ * @return delta
+ */
 int Instance::search1(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
     int minDelta = INF, delta, pDelta, qDelta, minQDelta, minQ;
     int p, q;
@@ -426,6 +453,14 @@ int Instance::search1(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
     return minDelta;
 }
 
+/*!
+ * search P + Q
+ * @param pBegin
+ * @param pEnd
+ * @param qBegin
+ * @param qEnd
+ * @return delta
+ */
 int Instance::search2(Iter pBegin, Iter pEnd, Iter qBegin, Iter qEnd) {
     int minPDelta = INF, minQDelta = INF, pDelta, qDelta, p, q;
     for (auto pIter = pBegin; pIter != pEnd; ++pIter) {
@@ -454,22 +489,12 @@ bool Instance::findMove() {
     int t = G_[0].getRandom();
     auto &elem_star = elements_[t];
     auto P = elem_star.getB().getSet();
-    auto Q = X_ & elem_star.getN3();
+    auto Q = X_.getSet();
     auto PTabu = partitionTabu(P);
     auto QTabu = partitionTabu(Q);
+
     if (breakTabu1(PTabu, P.end(), QTabu, Q.end())) return true;
-
-    int delta;
-    if (QTabu == Q.begin()) {
-        auto Q_ = X_.getSet();
-        auto Q_Tabu = partitionTabu(Q_);
-
-        if (breakTabu2(PTabu, P.end(), Q_Tabu, Q_.end())) return true;
-
-        delta = search2(P.begin(), PTabu, Q_.begin(), Q_Tabu);
-    } else {
-        delta = search1(P.begin(), PTabu, Q.begin(), QTabu);
-    }
+    int delta = search1(P.begin(), PTabu, Q.begin(), QTabu);
     if (delta < INF) {
         target_ += delta;
         if (target_ < target_star_) {
@@ -495,7 +520,7 @@ void Instance::makeMove() {
     U_ = G_[0].size();
     ++moveIter;
     //TODO:debug
-    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
+//    print("[test] {", U_, "} move: [", move_.first, move_.second, "]", "moveIter = ", moveIter, "tabuList size:", tabuList_.size());
 
     if (U_ < U_star_) {
         //X_star <- X

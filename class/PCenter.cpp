@@ -40,24 +40,24 @@ namespace szx {
 
         void coverAllNodesUnderFixedRadius(edward::Instance &instance, Centers& output, PCenter& input, std::function<bool()> isTimeout, int seed) {
             //edward::print("test instance:", instance);
-            edward::Timer timer;
+//            edward::Timer timer;
 //            instance.reduce();
 //            timer("reduce time:");
 //            edward::print("test instance after reduce:", instance);
 
-            timer.reset();
+//            timer.reset();
             instance.getInit();
-            timer("init time:");
+//            timer("init time:");
             int iter = 0;
             while (!isTimeout() && !instance.isSolved()) {
                 bool flag;
-                timer.reset();
+//                timer.reset();
                 while (!isTimeout() &&
                         !(flag = instance.findMove()));   //until find a legal move
                 if (flag) instance.makeMove();
                 //TODO:debug
-                edward::print("[test] iterate count:", ++iter);
-                timer("move time:");
+//                edward::print("[test] iterate count:", ++iter);
+//                timer("move time:");
             }
         }
 

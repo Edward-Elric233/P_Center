@@ -12,7 +12,7 @@ namespace edward {
 
 class Element {
     RandomSet B_; //the set of centers covering this element
-    RandomSet N3_;//N^3
+//    RandomSet N3_;//N^3
     int G_ = 0, W_ = 1;
     int idx_;
 public:
@@ -35,7 +35,7 @@ public:
 
     void reset() {
         G_ = 0; W_ = 1;
-        N3_.reset();
+//        N3_.reset();
     }
 
     void setG(int g) {
@@ -65,6 +65,7 @@ public:
         }
     }
 
+    /*
     void insertN3(int x) {
 //        if (!N3_.exist(x))
             N3_.insert(x);
@@ -73,6 +74,7 @@ public:
     const RandomSet& getN3() const {
         return N3_;
     }
+     */
 
     void covered(int x) {
         B_.insert(x);

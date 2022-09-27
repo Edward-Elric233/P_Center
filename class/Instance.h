@@ -39,6 +39,7 @@ class Instance {
      */
 
 
+    std::vector<std::pair<double, int>> alpha_;             //init时初始化
     RandomSet X_;                                           //需要重置
     std::vector<RandomSet> G_;    //G0 G1 G2                //需要重置
     int U_, U_star_;                 //|G0|                 //init时初始化
